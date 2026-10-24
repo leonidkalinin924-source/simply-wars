@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Провинции — стратегический прототип</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="turn-notice" class="turn-notice" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div class="app">
+    <header class="hud">
+      <div class="hud-brand">
+        <span class="hud-emblem">⚔</span>
+        <div>
+          <h1>Кабинет войны</h1>
+          <p class="hud-subtitle">Прототип пошаговой стратегии · 48 провинций</p>
+        </div>
+      </div>
+
+      <div class="hud-stats">
+        <div class="stat-card player">
+          <span class="stat-label">Драконья Мощь</span>
+          <div class="res-grid">
+            <div class="res-cell res-cell-wide">
+              <span class="res-icon">💰</span>
+              <strong id="player-gold">0</strong>
+              <span class="res-delta" id="player-gold-income">(+0)</span>
+              <span class="res-infl" id="player-inflation">[Инфляция: 0%]</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">⚙️</span>
+              <strong id="player-steel">0</strong>
+              <span class="res-delta" id="player-steel-income">(+0)</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">👥</span>
+              <strong id="player-soldiers">0</strong><span class="res-limit" id="player-soldier-limit">/0</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">🚜</span>
+              <strong id="player-tanks">0</strong><span class="res-limit" id="player-tank-limit">/0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card turn">
+          <span class="stat-label">Ход</span>
+          <strong id="turn-number">1</strong>
+        </div>
+        <div class="stat-card bot">
+          <span class="stat-label">Союз Мечей</span>
+          <div class="res-grid">
+            <div class="res-cell res-cell-wide">
+              <span class="res-icon">💰</span>
+              <strong id="bot-gold">0</strong>
+              <span class="res-delta" id="bot-gold-income">(+0)</span>
+              <span class="res-infl" id="bot-inflation">[Инфляция: 0%]</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">⚙️</span>
+              <strong id="bot-steel">0</strong>
+              <span class="res-delta" id="bot-steel-income">(+0)</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">👥</span>
+              <strong id="bot-soldiers">0</strong><span class="res-limit" id="bot-soldier-limit">/0</span>
+            </div>
+            <div class="res-cell">
+              <span class="res-icon">🚜</span>
+              <strong id="bot-tanks">0</strong><span class="res-limit" id="bot-tank-limit">/0</span>
+            </div>
+          </div>
+        </div>
+        <div class="stat-card diplo" id="hud-diplo-card">
+          <span class="stat-label">Дипломатия</span>
+          <strong id="hud-diplo-status">МИР</strong>
+        </div>
+      </div>
+
+      <div class="hud-actions">
+        <button id="journal-open-btn" class="btn btn-settings" type="button"
+                aria-haspopup="dialog" aria-controls="journal-modal"
+                title="Журнал игровых событий и боевые отчёты">
+          <span class="settings-gear" aria-hidden="true">▤</span>
+          <span>Журнал</span>
+        </button>
+        <button id="movement-management-open-btn" class="btn btn-settings" type="button" aria-haspopup="dialog" aria-controls="movement-management-modal" title="Управление армиями в пути">
+          <span aria-hidden="true">➤</span><span>Марши</span>
+        </button>
+        <button id="economy-forecast-open-btn" class="btn btn-settings" type="button" aria-haspopup="dialog" aria-controls="economy-forecast-modal" title="Прогноз доходов и окупаемости">
+          <span aria-hidden="true">▤</span><span>Прогноз</span>
+        </button>
+        <button id="research-open-btn" class="btn btn-settings" type="button" aria-haspopup="dialog" aria-controls="research-modal" title="Исследования государства">
+          <span aria-hidden="true">⚒</span><span>Технологии</span>
+        </button>
+        <button id="settings-open-btn" class="btn btn-settings" type="button"
+                aria-haspopup="dialog" aria-controls="settings-modal" aria-expanded="false"
+                title="Настройки графики и производительности">
+          <span class="settings-gear" aria-hidden="true">⚙</span>
+          <span>Настройки</span>
+        </button>
+        <button id="end-turn-btn" class="btn btn-end" type="button">Конец хода</button>
+      </div>
+    </header>
+
+    <main class="map-area">
+      <div class="map-frame" id="map-frame">
+      <div class="ocean-texture" id="ocean-texture" aria-hidden="true">
+        <svg class="ocean-texture-svg" viewBox="0 0 1000 760" preserveAspectRatio="none" focusable="false">
+          <defs>
+            <linearGradient id="ocean-surface-gradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" style="stop-color:var(--ocean-surface-top)" />
+              <stop offset="48%" style="stop-color:var(--ocean-surface-mid)" />
+              <stop offset="100%" style="stop-color:var(--ocean-surface-deep)" />
+            </linearGradient>
+            <linearGradient id="ocean-light-shimmer" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" style="stop-color:var(--ocean-glint);stop-opacity:.42" />
+              <stop offset="45%" style="stop-color:var(--ocean-glint);stop-opacity:.04" />
+              <stop offset="100%" style="stop-color:var(--ocean-glint);stop-opacity:0" />
+            </linearGradient>
+            <pattern id="ocean-wave-pattern" width="640" height="320" patternUnits="userSpaceOnUse">
+              <g class="ocean-wave-shadows">
+                <path d="M0 29 C30 8 58 8 82 28 S139 57 173 32 S237 6 270 27 S335 62 371 32 S432 7 466 28 S531 58 564 33 S613 11 640 29" />
+                <path d="M0 88 C25 66 53 70 82 87 S142 116 176 89 S239 67 272 87 S338 119 371 90 S435 66 467 86 S532 119 565 91 S615 70 640 87" />
+                <path d="M0 150 C30 127 56 130 83 149 S144 177 175 151 S240 128 272 148 S337 182 372 151 S434 128 466 148 S532 179 565 151 S616 130 640 149" />
+                <path d="M0 211 C27 191 56 190 84 210 S144 240 176 212 S240 190 273 209 S338 240 371 212 S434 190 467 209 S532 240 565 212 S616 193 640 210" />
+                <path d="M0 272 C27 250 54 251 83 270 S143 300 175 272 S239 250 273 270 S338 301 372 273 S434 250 467 270 S532 302 565 273 S616 252 640 271" />
+              </g>
+              <g class="ocean-wave-bodies">
+                <path d="M0 26 C30 5 58 5 82 25 S139 54 173 29 S237 3 270 24 S335 59 371 29 S432 4 466 25 S531 55 564 30 S613 8 640 26" />
+                <path d="M0 85 C25 63 53 67 82 84 S142 113 176 86 S239 64 272 84 S338 116 371 87 S435 63 467 83 S532 116 565 88 S615 67 640 84" />
+                <path d="M0 147 C30 124 56 127 83 146 S144 174 175 148 S240 125 272 145 S337 179 372 148 S434 125 466 145 S532 176 565 148 S616 127 640 146" />
+                <path d="M0 208 C27 188 56 187 84 207 S144 237 176 209 S240 187 273 206 S338 237 371 209 S434 187 467 206 S532 237 565 209 S616 190 640 207" />
+                <path d="M0 269 C27 247 54 248 83 267 S143 297 175 269 S239 247 273 267 S338 298 372 270 S434 247 467 267 S532 299 565 270 S616 249 640 268" />
+              </g>
+              <g class="ocean-wave-foams">
+                <path d="M21 23 C42 12 55 15 72 25 S104 40 120 31" />
+                <path d="M214 27 C234 12 252 13 271 25 S301 40 317 34" />
+                <path d="M405 27 C423 15 442 14 459 27 S490 39 509 32" />
+                <path d="M80 84 C100 74 117 75 134 86 S162 99 179 91" />
+                <path d="M333 88 C352 74 369 75 386 86 S414 99 432 91" />
+                <path d="M113 147 C133 134 149 136 166 148 S194 162 210 154" />
+                <path d="M433 149 C451 136 469 138 486 149 S515 164 532 155" />
+                <path d="M187 209 C205 197 224 198 240 210 S268 223 286 215" />
+                <path d="M462 270 C480 257 498 259 515 270 S544 285 560 276" />
+              </g>
+            </pattern>
+            <pattern id="ocean-detail-pattern" width="820" height="360" patternUnits="userSpaceOnUse">
+              <g class="ocean-detail-shadows">
+                <path d="M-20 49 C22 25 58 29 94 48 S157 82 199 56 S269 30 306 49 S373 81 414 54 S485 28 522 50 S591 81 632 54 S739 32 840 52" />
+                <path d="M-20 173 C20 151 57 153 92 173 S159 207 200 178 S269 151 307 172 S374 204 416 177 S487 151 523 172 S592 204 634 176 S742 153 840 174" />
+                <path d="M-20 297 C22 274 59 278 94 297 S159 331 200 302 S270 275 307 296 S375 328 416 301 S487 275 523 296 S592 328 634 300 S742 277 840 298" />
+              </g>
+              <g class="ocean-detail-foams">
+                <path d="M30 45 C50 34 68 34 86 45 S117 58 134 50" />
+                <path d="M252 52 C275 37 293 40 311 51 S342 66 359 57" />
+                <path d="M510 48 C533 34 551 36 570 48 S600 62 618 54" />
+                <path d="M130 171 C150 158 169 159 186 170 S218 185 235 176" />
+                <path d="M412 176 C433 161 452 163 470 175 S500 188 519 180" />
+                <path d="M575 296 C596 282 614 284 632 295 S664 311 681 301" />
+              </g>
+            </pattern>
+            <radialGradient id="ocean-soft-glow" cx="20%" cy="8%" r="95%">
+              <stop offset="0%" style="stop-color:var(--ocean-glint);stop-opacity:.34" />
+              <stop offset="58%" style="stop-color:var(--ocean-glint);stop-opacity:.06" />
+              <stop offset="100%" style="stop-color:var(--ocean-glint);stop-opacity:0" />
+            </radialGradient>
+          </defs>
+          <rect class="ocean-ground" x="-160" y="-120" width="1320" height="1000" fill="url(#ocean-surface-gradient)" />
+          <rect class="ocean-glow-layer" x="-160" y="-120" width="1320" height="1000" fill="url(#ocean-soft-glow)" />
+          <rect class="ocean-wave-layer ocean-wave-layer-main" x="-160" y="-120" width="1320" height="1000" fill="url(#ocean-wave-pattern)" />
+          <rect class="ocean-wave-layer ocean-wave-layer-details" x="-160" y="-120" width="1320" height="1000" fill="url(#ocean-detail-pattern)" />
+          <rect class="ocean-shimmer-layer" x="-160" y="-120" width="1320" height="1000" fill="url(#ocean-light-shimmer)" />
+        </svg>
+      </div>
+        <svg id="map" class="map-svg" viewBox="0 0 1000 760"
+             preserveAspectRatio="xMidYMid meet" role="img"
+             aria-label="Интерактивная карта материка из 48 провинций в 12 субъектах">
+          <defs>
+            <linearGradient id="gradPlayer" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0%"   stop-color="#5b9be6"/>
+              <stop offset="55%"  stop-color="#2f6cb0"/>
+              <stop offset="100%" stop-color="#1c4576"/>
+            </linearGradient>
+            <linearGradient id="gradBotPeace" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0%"   stop-color="#f4c896"/>
+              <stop offset="55%"  stop-color="#d9a06a"/>
+              <stop offset="100%" stop-color="#a87140"/>
+            </linearGradient>
+            <linearGradient id="gradBotWar" x1="0" y1="0" x2="0.35" y2="1">
+              <stop offset="0%"   stop-color="#d96366"/>
+              <stop offset="55%"  stop-color="#a83b3f"/>
+              <stop offset="100%" stop-color="#6d1f25"/>
+            </linearGradient>
+            <clipPath id="main-island-clip" clipPathUnits="userSpaceOnUse">
+              <path id="main-island-clip-shape" d=""/>
+            </clipPath>
+            <clipPath id="river-provinces-clip" clipPathUnits="userSpaceOnUse">
+              <path id="river-province-clip-shapes" d=""/>
+            </clipPath>
+            <g id="biome-tree-icon" class="biome-tree-icon">
+              <polygon class="biome-tree-crown" points="-4,4 0,-4.5 4,4"/>
+              <polygon class="biome-tree-lower" points="-3.5,1.5 0,-2.5 3.5,1.5"/>
+              <line class="biome-tree-trunk" x1="0" y1="3" x2="0" y2="5"/>
+            </g>
+            <g id="biome-mountain-icon" class="biome-mountain-icon">
+              <polygon class="biome-mountain-peak" points="-5,4 0,-4.5 5,4"/>
+              <polyline class="biome-mountain-snow" points="-1.7,-1.6 0,0.2 1.5,-1.5"/>
+            </g>
+            <g id="biome-grass-icon" class="biome-grass-icon">
+              <line class="biome-grass-blade" x1="-3.5" y1="4" x2="-0.7" y2="-2"/>
+              <line class="biome-grass-blade" x1="0.5" y1="4" x2="3.2" y2="-1.5"/>
+            </g>
+<marker id="arrow-player" viewBox="0 0 10 10"
+                    refX="8" refY="5" markerWidth="7" markerHeight="7"
+                    orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#ffd700"/>
+            </marker>
+            <marker id="arrow-bot" viewBox="0 0 10 10"
+                    refX="8" refY="5" markerWidth="7" markerHeight="7"
+                    orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="#c4474a"/>
+            </marker>
+
+            <!-- Minimal, static SVG symbols: at most four primitive shapes per building. -->
+            <g id="icon-factory" class="icon-factory">
+              <rect class="factory-body" x="-4.5" y="-3" width="9" height="8" rx="0.35"/>
+              <polygon class="factory-roof" points="-5,-3 0,-6.5 5,-3"/>
+              <rect class="factory-chimney" x="2.2" y="-8.5" width="1.8" height="3.5"/>
+              <circle class="smoke-puff smoke-puff-first" cx="3.1" cy="-9.2" r="0.8"/>
+              <circle class="smoke-puff smoke-puff-second" cx="3.1" cy="-9.6" r="0.65"/>
+            </g>
+            <g id="icon-steel-mill" class="icon-steel-mill">
+              <rect class="mill-building" x="-5" y="-3" width="10" height="8"/>
+              <rect class="mill-roof" x="-5" y="-5" width="10" height="2"/>
+              <rect class="mill-stack" x="2.5" y="-8" width="1.7" height="3"/>
+              <circle class="smoke-puff smoke-puff-first" cx="3.35" cy="-8.7" r="0.75"/>
+              <circle class="smoke-puff smoke-puff-second" cx="3.35" cy="-9.1" r="0.6"/>
+              <polygon class="mill-flame" points="-1,-2 0,-5 2,-2 0,0"/>
+              <line class="mill-anvil" x1="-3.5" y1="2" x2="1" y2="2"/>
+            </g>
+            <g id="icon-barracks" class="icon-barracks">
+              <polygon class="barracks-tent" points="-6,5 0,-5 6,5"/>
+              <line class="barracks-seam" x1="0" y1="-5" x2="0" y2="5"/>
+              <line class="barracks-ground" x1="-5" y1="5" x2="5" y2="5"/>
+            </g>
+            <g id="icon-tank-factory" class="icon-tank-factory">
+              <rect class="tankplant-wall" x="-5" y="-5" width="10" height="10"/>
+              <rect class="tankplant-door" x="-3" y="-1" width="6" height="6"/>
+              <line class="tankplant-barrel" x1="-1" y1="2" x2="4.5" y2="2"/>
+            </g>
+            <g id="icon-settlement-1" class="icon-settlement">
+              <rect class="settlement-house" x="-4" y="-1" width="8" height="6"/>
+              <polygon class="settlement-roof" points="-5,-1 0,-6 5,-1"/>
+              <rect class="settlement-door" x="-1" y="2" width="2" height="3"/>
+            </g>
+            <g id="icon-settlement-2" class="icon-settlement">
+              <rect class="settlement-house" x="-5" y="0" width="4" height="5"/>
+              <polygon class="settlement-roof" points="-5.5,0 -3,-3 -0.5,0"/>
+              <rect class="settlement-house-secondary" x="1" y="-2" width="4" height="7"/>
+              <polygon class="settlement-roof-secondary" points="0.5,-2 3,-5 5.5,-2"/>
+            </g>
+            <g id="icon-settlement-3" class="icon-settlement">
+              <rect class="settlement-midrise" x="-5" y="0" width="3" height="5"/>
+              <rect class="settlement-midrise-secondary" x="-1.5" y="-4" width="3.5" height="9"/>
+              <rect class="settlement-midrise-third" x="2.5" y="-1" width="3" height="6"/>
+            </g>
+            <g id="icon-settlement-4" class="icon-settlement">
+              <rect class="settlement-tower" x="-5" y="-5" width="3" height="10"/>
+              <rect class="settlement-tower-secondary" x="-1.2" y="-7" width="3.5" height="12"/>
+              <rect class="settlement-tower-third" x="3" y="-3" width="2.5" height="8"/>
+            </g>
+            <g id="icon-settlement-5" class="icon-settlement">
+              <polygon class="settlement-skyscraper" points="-5,5 -5,-5 -3.5,-8 -2,-5 -2,5"/>
+              <polygon class="settlement-skyscraper-secondary" points="-1.3,5 -1.3,-8 0,-10 1.3,-8 1.3,5"/>
+              <polygon class="settlement-skyscraper-third" points="3,5 3,-4 4.1,-6 5.2,-4 5.2,5"/>
+            </g>
+            <g id="icon-fort" class="icon-fort">
+              <rect class="fort-concrete" x="-5" y="-3" width="10" height="8"/>
+              <rect class="fort-roof" x="-5" y="-5" width="10" height="2"/>
+              <line class="fort-slit" x1="-3.5" y1="0" x2="3.5" y2="0"/>
+            </g>
+            <g id="icon-soldier" class="icon-soldier">
+              <circle class="soldier-head" cx="0" cy="-4" r="2"/>
+              <rect class="soldier-body" x="-2" y="-1.6" width="4" height="6" rx="0.35"/>
+              <line class="soldier-arm" x1="1.2" y1="0" x2="4" y2="2.6"/>
+              <line class="soldier-leg" x1="0.5" y1="4.4" x2="2.2" y2="7"/>
+            </g>
+            <g id="icon-tank" class="icon-tank">
+              <rect class="tank-track" x="-7" y="1" width="14" height="4.2" rx="1.2"/>
+              <rect class="tank-hull" x="-6" y="-2.5" width="12" height="4.5" rx="0.7"/>
+              <rect class="tank-turret" x="-2.5" y="-4.5" width="5.5" height="2.5" rx="0.5"/>
+              <line class="tank-barrel" x1="2.5" y1="-3.4" x2="7.5" y2="-3.4"/>
+            </g>
+          </defs>
+
+          <g id="map-world" transform="translate(0 0) scale(1 1)">
+            <g id="provinces-layer" clip-path="url(#main-island-clip)"></g>
+            <g id="terrain-river-clip" clip-path="url(#main-island-clip)" pointer-events="none">
+              <g id="biome-layer"></g>
+              <g id="rivers-layer" clip-path="url(#river-provinces-clip)" aria-label="Процедурная речная сеть"></g>
+            </g>
+            <g id="factories-layer" opacity="0" pointer-events="none" clip-path="url(#main-island-clip)">
+              <g id="industry-layer"></g>
+              <g id="military-layer"></g>
+            </g>
+            <g id="settlements-layer" pointer-events="none" clip-path="url(#main-island-clip)"></g>
+            <g id="movements-layer" pointer-events="none" clip-path="url(#main-island-clip)"></g>
+            <g id="border-layer" pointer-events="none"></g>
+            <g id="labels-layer" opacity="0" pointer-events="none" clip-path="url(#main-island-clip)"></g>
+            <g id="faction-labels-layer" opacity="0" pointer-events="none" clip-path="url(#main-island-clip)"></g>
+          </g>
+        </svg>
+
+      </div>
+    </main>
+  </div>
+
+
+  <div id="settings-modal" class="modal hidden settings-modal" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <section class="modal-card settings-card">
+      <button id="settings-close-btn" class="overlay-close settings-close" type="button"
+              title="Закрыть настройки" aria-label="Закрыть настройки">×</button>
+      <div class="settings-heading">
+        <span class="settings-heading-icon" aria-hidden="true">⚙</span>
+        <div>
+          <h3 id="settings-title">Настройки</h3>
+          <p class="settings-subtitle">Настройте отображение игры и управление под себя.</p>
+        </div>
+      </div>
+
+      <div class="settings-tabs" role="tablist" aria-label="Разделы настроек">
+        <button id="settings-visual-tab" class="settings-tab active" type="button" role="tab" aria-selected="true" aria-controls="settings-visual-panel">Графика</button>
+        <button id="settings-controls-tab" class="settings-tab" type="button" role="tab" aria-selected="false" aria-controls="settings-controls-panel">Управление</button>
+      </div>
+      <div id="settings-visual-panel" class="settings-tab-panel" role="tabpanel" aria-labelledby="settings-visual-tab">
+      <div class="settings-group" aria-labelledby="settings-visual-label">
+        <h4 id="settings-visual-label">Отображение карты</h4>
+        <label class="setting-row" for="setting-show-factories">
+          <input id="setting-show-factories" type="checkbox" checked>
+          <span class="setting-copy"><strong>Отображать фабрики и цеха</strong><small>Промышленные здания и их кластеры</small></span>
+        </label>
+        <label class="setting-row" for="setting-show-military">
+          <input id="setting-show-military" type="checkbox" checked>
+          <span class="setting-copy"><strong>Отображать военные объекты</strong><small>Казармы, танковые заводы и укрепления</small></span>
+        </label>
+        <label class="setting-row" for="setting-show-settlements">
+          <input id="setting-show-settlements" type="checkbox" checked>
+          <span class="setting-copy"><strong>Отображать поселения</strong><small>Деревни, города и мегаполисы</small></span>
+        </label>
+        <label class="setting-row" for="setting-show-terrain">
+          <input id="setting-show-terrain" type="checkbox" checked>
+          <span class="setting-copy"><strong>Отображать текстуры ландшафта</strong><small>Небольшие маркеры леса, равнин и гор</small></span>
+        </label>
+        <label class="setting-row" for="setting-show-ocean">
+          <input id="setting-show-ocean" type="checkbox" checked>
+          <span class="setting-copy"><strong>Текстурированный океан</strong><small>Мультяшные волны и плавное движение воды за материком</small></span>
+        </label>
+        <label class="setting-row" for="setting-smoke-animation">
+          <input id="setting-smoke-animation" type="checkbox" checked>
+          <span class="setting-copy"><strong>Анимация дыма</strong><small>Небольшой эффект на промышленных трубах</small></span>
+        </label>
+        <div class="settings-legend-control">
+          <button id="settings-map-legend-toggle" class="btn btn-ghost settings-legend-toggle" type="button" aria-expanded="false" aria-controls="map-legend">
+            <span aria-hidden="true">ⓘ</span>
+            <span>Условные обозначения карты</span>
+            <span class="settings-legend-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <div id="map-legend" class="map-legend settings-map-legend hidden" aria-label="Условные обозначения карты">
+            <span><i class="dot player"></i> Драконья Мощь</span>
+            <span><i class="dot bot"></i> <span id="legend-bot-text">Союз Мечей</span></span>
+            <span>⚔ солдаты</span>
+            <span>◈ танки</span>
+            <span>▣ укрепление</span>
+            <span>🏭 фабрика</span>
+            <span>⚙️ сталь-цех</span>
+            <span>🛡️ казарма</span>
+            <span>🚜 танк-завод</span>
+            <span>🏘️ поселение</span>
+            <span>👑 столица</span>
+            <span class="legend-river">≈ река</span>
+            <span class="legend-forest">♧ лес</span>
+            <span class="legend-mountain">△ горы</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-group settings-theme-group">
+        <h4>Тема интерфейса</h4>
+        <div class="theme-control-row">
+          <span id="settings-theme-status" class="theme-status">Тёмная тема</span>
+          <button id="settings-theme-toggle" class="btn btn-primary theme-toggle-btn" type="button">Включить светлую</button>
+        </div>
+      </div>
+      <p class="settings-footnote">Настройки графики не меняют экономику, войска или статистику провинций.</p>
+      <div class="settings-new-campaign-wrap">
+        <button id="settings-new-campaign-btn" class="btn btn-danger settings-new-campaign-btn" type="button">
+          <span aria-hidden="true">↻</span>
+          <span>Новая кампания</span>
+        </button>
+        <p class="settings-footnote">Начнёт новую кампанию и заменит текущее сохранение.</p>
+      </div>
+      </div>
+      <div id="settings-controls-panel" class="settings-tab-panel hidden" role="tabpanel" aria-labelledby="settings-controls-tab">
+        <div class="settings-group" aria-labelledby="settings-controls-label">
+          <h4 id="settings-controls-label">Назначение клавиш</h4>
+          <p class="settings-control-help">Нажмите «Изменить» напротив действия, затем нажмите желаемую клавишу. Назначения сохраняются в браузере и заменяют стандартные клавиши. Комбинация Shift + ЛКМ для группового выделения и панорамирование на СКМ остаются неизменными.</p>
+          <div class="settings-keybindings">
+            <div class="keybinding-row"><span><strong>Завершить ход</strong><small>Перейти к следующему ходу</small></span><button class="keybinding-button" type="button" data-keybinding="endTurn">Пробел</button></div>
+            <div class="keybinding-row"><span><strong>Перемещение войск</strong><small>Включить или отменить выбор цели</small></span><button class="keybinding-button" type="button" data-keybinding="move">M</button></div>
+            <div class="keybinding-row"><span><strong>Выбор вверх</strong><small>Выбрать соседнюю провинцию сверху</small></span><button class="keybinding-button" type="button" data-keybinding="navigateUp">W</button></div>
+            <div class="keybinding-row"><span><strong>Выбор вниз</strong><small>Выбрать соседнюю провинцию снизу</small></span><button class="keybinding-button" type="button" data-keybinding="navigateDown">S</button></div>
+            <div class="keybinding-row"><span><strong>Выбор влево</strong><small>Выбрать соседнюю провинцию слева</small></span><button class="keybinding-button" type="button" data-keybinding="navigateLeft">A</button></div>
+            <div class="keybinding-row"><span><strong>Выбор вправо</strong><small>Выбрать соседнюю провинцию справа</small></span><button class="keybinding-button" type="button" data-keybinding="navigateRight">D</button></div>
+            <div class="keybinding-row"><span><strong>Открыть журнал</strong><small>История действий и боевые отчёты</small></span><button class="keybinding-button" type="button" data-keybinding="openJournal">J</button></div>
+            <div class="keybinding-row"><span><strong>Экономический прогноз</strong><small>Открыть окно доходов и расходов</small></span><button class="keybinding-button" type="button" data-keybinding="openForecast">P</button></div>
+            <div class="keybinding-row"><span><strong>Технологии</strong><small>Открыть древо исследований</small></span><button class="keybinding-button" type="button" data-keybinding="openResearch">T</button></div>
+            <div class="keybinding-row"><span><strong>Марши</strong><small>Управление армиями в пути и приказами</small></span><button class="keybinding-button" type="button" data-keybinding="openMarches">G</button></div>
+            <div class="keybinding-row"><span><strong>Отмена / закрыть окно</strong><small>Отменить текущий режим или закрыть диалог</small></span><button class="keybinding-button" type="button" data-keybinding="cancel">Esc</button></div>
+          </div>
+          <p id="settings-keybinding-status" class="settings-control-status" role="status" aria-live="polite">Клавиши можно изменить в любой момент.</p>
+          <button id="settings-reset-keybindings" class="btn btn-ghost settings-reset-keys" type="button">Восстановить стандартные клавиши</button>
+        </div>
+        <div class="settings-group" aria-labelledby="settings-controls-help-label">
+          <h4 id="settings-controls-help-label">Управление картой</h4>
+          <div class="settings-help-list">
+            <p><strong>ЛКМ:</strong> выбрать одну провинцию.</p>
+            <p><strong>Shift + ЛКМ:</strong> добавить или убрать свою провинцию из группового выделения.</p>
+            <p><strong>СКМ:</strong> перемещать карту, удерживая нажатым колёсико мыши.</p>
+            <p><strong>Колесо мыши:</strong> приблизить или отдалить карту.</p>
+            <p><strong>ПКМ:</strong> закрыть панель или отменить текущий режим.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div id="province-overlay" class="overlay">
+    <aside class="overlay-panel" role="dialog" aria-label="Информация о провинции">
+      <button id="overlay-close-btn" class="overlay-close" type="button"
+              title="Закрыть (ПКМ или Esc)" aria-label="Закрыть">×</button>
+
+      <div class="panel-header">
+        <h3 id="panel-name">—</h3>
+        <span id="panel-owner" class="owner-badge"></span>
+      </div>
+      <div id="multi-selection-status" class="multi-selection-status hidden" aria-live="polite">
+        <span id="multi-selection-copy">Выбрано несколько провинций.</span>
+        <button id="clear-multi-selection-btn" class="clear-multi-selection-btn" type="button">Оставить одну</button>
+      </div>
+
+      <section id="country-card" class="country-card" aria-label="Государство провинции">
+        <div class="country-flag-wrap">
+          <svg id="country-flag" class="country-flag" viewBox="0 0 120 76" role="img" aria-label="Флаг государства">
+            <defs>
+              <linearGradient id="country-flag-player-bg" x1="0" y1="0" x2="0.35" y2="1">
+                <stop offset="0%" stop-color="#5b9be6"/><stop offset="55%" stop-color="#2f6cb0"/><stop offset="100%" stop-color="#1c4576"/>
+              </linearGradient>
+              <linearGradient id="country-flag-bot-bg" x1="0" y1="0" x2="0.35" y2="1">
+                <stop offset="0%" stop-color="#f4c896"/><stop offset="55%" stop-color="#d9a06a"/><stop offset="100%" stop-color="#a87140"/>
+              </linearGradient>
+              <linearGradient id="country-flag-bot-war-bg" x1="0" y1="0" x2="0.35" y2="1">
+                <stop offset="0%" stop-color="#d96366"/><stop offset="55%" stop-color="#a83b3f"/><stop offset="100%" stop-color="#6d1f25"/>
+              </linearGradient>
+            </defs>
+            <rect id="country-flag-background" x="1" y="1" width="118" height="74" rx="3" fill="url(#country-flag-bot-bg)"/>
+            <g id="country-flag-sword" fill="#fff0c8" stroke="#57351d" stroke-linejoin="round" stroke-width="1.8">
+              <path d="M60 12 L67 44 L60 53 L53 44 Z"/>
+              <path d="M55 40 L65 40 L63 46 L57 46 Z" fill="#d5a35f"/>
+              <rect x="57.5" y="46" width="5" height="13" rx="1.5" fill="#7c4a27"/>
+              <path d="M51 58 Q60 54 69 58 L66 63 L54 63 Z" fill="#d5a35f"/>
+            </g>
+            <g id="country-flag-dragon" fill="#dcecff" stroke="#153b68" stroke-width="1.8" stroke-linejoin="round">
+              <path d="M29 51 L39 38 L35 26 L48 31 L58 17 L65 31 L81 27 L76 38 L91 43 L79 49 L73 61 L59 57 L48 63 L43 54 Z"/>
+              <path d="M39 38 L55 39 L48 47 L34 48 Z" fill="#a8d3ff"/>
+              <path d="M58 17 L60 8 L68 27 Z" fill="#dcecff"/>
+              <circle cx="68" cy="37" r="3.2" fill="#f7c95c" stroke="#17395f"/>
+              <path d="M61 50 L75 48 L69 54 Z" fill="#17395f" stroke="none"/>
+            </g>
+          </svg>
+        </div>
+        <div class="country-details">
+          <span class="country-eyebrow">ГОСУДАРСТВО</span>
+          <strong id="country-name" class="country-name">Союз Мечей</strong>
+          <div class="country-meta"><span>Устройство</span><strong id="country-government">Федеративное</strong></div>
+          <div class="country-meta"><span>Идеология</span><strong id="country-ideology">Стандартная — Без Идеологии</strong></div>
+        </div>
+      </section>
+
+      <div id="panel-terrain" class="terrain-card" aria-label="Ландшафт провинции">
+        <span id="panel-biome-icon" class="terrain-card-icon" aria-hidden="true">♧</span>
+        <div class="terrain-card-copy">
+          <strong id="panel-biome-name">Ландшафт</strong>
+          <span id="panel-biome-effects">Бонусы и особенности провинции</span>
+        </div>
+      </div>
+
+      <div id="capital-banner" class="capital-banner hidden">
+        <span class="capital-banner-icon">⭐</span>
+        <span class="capital-banner-text">СТОЛИЦА ГОСУДАРСТВА</span>
+        <span id="capital-banner-bonus" class="capital-banner-bonus">+5 зол./ход</span>
+      </div>
+
+      <div id="panel-movements" class="panel-movement-status hidden" aria-live="polite"></div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab active" data-tab="army" role="tab" type="button" aria-controls="tab-army">
+          <span class="tab-icon" aria-hidden="true">⚔</span>
+          <span class="tab-label">Армия</span>
+        </button>
+        <button class="tab" data-tab="economy" role="tab" type="button" aria-controls="tab-economy">
+          <span class="tab-icon" aria-hidden="true">🏭</span>
+          <span class="tab-label">Экономика</span>
+        </button>
+      </div>
+
+      <div id="tab-army" class="tab-content" role="tabpanel" aria-labelledby="tab-army">
+        <ul class="province-stats">
+          <li class="stat-soldiers"><span class="stat-key">Солдаты:</span> <strong id="panel-soldiers"></strong></li>
+          <li class="stat-tanks"><span class="stat-key">Танки:</span> <strong id="panel-tanks"></strong></li>
+          <li class="stat-fort"><span class="stat-key">Укрепление:</span> <strong id="panel-fort"></strong></li>
+          <li class="stat-defense"><span class="stat-key">Оборона:</span> <strong id="panel-defense"></strong></li>
+          <li class="stat-barracks"><span class="stat-key">Казарма:</span> <strong id="panel-barracks"></strong></li>
+          <li class="stat-tank-factory"><span class="stat-key">Танк. завод:</span> <strong id="panel-tank-factory"></strong></li>
+        </ul>
+
+        <div id="queue-army-block" class="queue-block hidden">
+          <h5 class="queue-title">⏳ Производство</h5>
+          <ul id="queue-army-list" class="queue-list"></ul>
+        </div>
+
+        <div id="army-actions" class="actions">
+          <button id="hire-btn" class="btn btn-primary" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-soldier" transform="scale(1.05)"></use></svg><span class="button-label">Нанять солдата (−2 зол., 1 х.)</span></button>
+          <button id="tank-btn" class="btn btn-primary" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-tank" transform="scale(1.0)"></use></svg><span class="button-label">Нанять танк (−5 зол., −3 стали, 2 х.)</span></button>
+          <button id="fort-btn" class="btn btn-primary" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-fort" transform="scale(.88)"></use></svg><span class="button-label">Улучшить укрепление (3 х.)</span></button>
+          <button id="barracks-btn" class="btn btn-barracks" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-barracks" transform="scale(.92)"></use></svg><span class="button-label">Казарма</span></button>
+          <button id="tank-factory-btn" class="btn btn-tank-factory" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-tank-factory" transform="scale(.92)"></use></svg><span class="button-label">Танковый завод</span></button>
+          <button id="move-btn" class="btn btn-move" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-soldier" transform="scale(1.05)"></use></svg><span class="button-label">Переместить войска [M]</span></button>
+        </div>
+      </div>
+
+      <div id="tab-economy" class="tab-content hidden" role="tabpanel" aria-labelledby="tab-economy">
+        <ul class="province-stats">
+          <li class="stat-income"><span class="stat-key">Доход:</span> <strong id="panel-income"></strong> зол./ход</li>
+          <li class="stat-factories"><span class="stat-key">Фабрики:</span> <strong id="panel-factories"></strong></li>
+          <li class="stat-steel-mills"><span class="stat-key">Сталелитейные цеха:</span> <strong id="panel-steel-mills"></strong></li>
+          <li class="stat-settlement"><span class="stat-key">Поселение:</span> <strong id="panel-settlement"></strong></li>
+          <li class="stat-neighbors"><span class="stat-key">Соседи:</span> <span id="panel-neighbors"></span></li>
+        </ul>
+
+        <div id="queue-econ-block" class="queue-block hidden">
+          <h5 class="queue-title">⏳ Строительство</h5>
+          <ul id="queue-econ-list" class="queue-list"></ul>
+        </div>
+
+        <div id="economy-build-actions" class="actions">
+          <button id="factory-btn" class="btn btn-primary" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-factory" transform="scale(.92)"></use></svg><span class="button-label">Построить фабрику (−50 зол., 3 х.)</span></button>
+          <button id="steel-mill-btn" class="btn btn-steel" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-steel-mill" transform="scale(.92)"></use></svg><span class="button-label">Построить сталелитейный цех (−150 зол., 3 х.)</span></button>
+          <button id="settlement-btn" class="btn btn-settlement" type="button"><svg class="action-icon" viewBox="-13 -13 26 26" aria-hidden="true" focusable="false"><use href="#icon-settlement-1" transform="scale(.95)"></use></svg><span class="button-label">Построить поселение</span></button>
+        </div>
+      </div>
+
+      <div id="general-actions" class="overlay-section hidden">
+        <p id="foreign-hint" class="hint hidden"></p>
+        <div class="actions">
+          <button id="declare-war-btn" class="btn btn-danger hidden" type="button">Объявить войну</button>
+        </div>
+      </div>
+
+      <div id="diplomacy-section" class="overlay-section">
+        <h4 class="overlay-h4">Дипломатия</h4>
+        <div class="diplo-row">
+          <span class="diplo-label">Статус</span>
+          <span id="diplo-status" class="diplo-badge peace">МИР</span>
+        </div>
+        <div class="diplo-row">
+          <span class="diplo-label">Отношения</span>
+          <strong id="diplo-relations">0</strong>
+        </div>
+        <div class="relations-track" aria-hidden="true">
+          <div id="relations-fill" class="relations-fill"></div>
+          <span class="relations-zero"></span>
+        </div>
+        <p id="diplo-relations-hint" class="hint">Нейтралитет.</p>
+        <p id="non-aggression-status" class="hint non-aggression-status">Пакт о ненападении не действует.</p>
+        <div class="actions">
+          <button id="non-aggression-btn" class="btn btn-gold" type="button">Заключить пакт о ненападении (−500 зол.)</button>
+          <button id="improve-relations-btn" class="btn btn-primary" type="button">Улучшить отношения (−30 зол., +20)</button>
+          <button id="peace-btn" class="btn btn-primary hidden" type="button">Заключить мир</button>
+          <button id="aid-btn" class="btn btn-gold" type="button">Попросить финансовую помощь (+40 зол.)</button>
+          <p id="aid-hint" class="hint">Помощь доступна при мире и отношениях выше 50.</p>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <div id="journal-modal" class="modal hidden journal-modal" role="dialog" aria-modal="true" aria-labelledby="journal-title">
+    <section class="modal-card journal-card">
+      <div class="journal-heading">
+        <div>
+          <h3 id="journal-title">Журнал кампании</h3>
+          <p class="journal-subtitle">История действий, производства, дипломатии и сражений. Последние записи отображаются сверху.</p>
+        </div>
+        <button id="journal-close-btn" class="overlay-close journal-close" type="button" title="Закрыть журнал" aria-label="Закрыть журнал">×</button>
+      </div>
+      <div class="journal-tabs" role="tablist" aria-label="Действия сторон и боевые отчёты">
+        <button id="journal-player-tab" class="journal-tab active" type="button" role="tab" aria-selected="true" aria-controls="journal-player-panel">Действия игрока</button>
+        <button id="journal-bot-tab" class="journal-tab" type="button" role="tab" aria-selected="false" aria-controls="journal-bot-panel">Действия бота</button>
+        <button id="journal-battles-tab" class="journal-tab" type="button" role="tab" aria-selected="false" aria-controls="journal-battles-panel">Боевые отчёты</button>
+      </div>
+      <div id="journal-player-panel" class="journal-scroll" role="tabpanel" aria-labelledby="journal-player-tab">
+        <div id="journal-player-list" class="journal-entry-list"></div>
+      </div>
+      <div id="journal-bot-panel" class="journal-scroll hidden" role="tabpanel" aria-labelledby="journal-bot-tab">
+        <div id="journal-bot-list" class="journal-entry-list"></div>
+      </div>
+      <div id="journal-battles-panel" class="journal-scroll hidden" role="tabpanel" aria-labelledby="journal-battles-tab">
+        <div id="journal-battles-list" class="journal-entry-list"></div>
+      </div>
+      <p class="journal-footnote">Журнал сохраняется вместе с кампанией в локальном хранилище браузера.</p>
+    </section>
+  </div>
+
+  <div id="economy-forecast-modal" class="modal hidden feature-modal" role="dialog" aria-modal="true" aria-labelledby="economy-forecast-title">
+    <section class="modal-card feature-card">
+      <div class="feature-heading">
+        <div><h3 id="economy-forecast-title">Экономический прогноз</h3><p class="feature-subtitle">Прогноз на ближайшие ходы с учётом очередей строительства и завершённых технологий.</p></div>
+        <button id="economy-forecast-close-btn" class="overlay-close feature-close" type="button" aria-label="Закрыть прогноз">×</button>
+      </div>
+      <div id="economy-forecast-overview" class="forecast-summary-grid"></div>
+      <h4>Ожидаемый баланс</h4>
+      <div class="forecast-table-wrap"><table class="forecast-table"><thead><tr><th>Период</th><th>Золото</th><th>Сталь</th><th>Золото/ход</th><th>Сталь/ход</th></tr></thead><tbody id="economy-forecast-table"></tbody></table></div>
+      <h4>Окупаемость выбранных провинций</h4>
+      <div id="economy-payback-list" class="forecast-list"></div>
+      <p class="feature-footnote">Это прогноз при сохранении текущего контроля территорий и без учёта будущих боёв, новых приказов и изменений отношений.</p>
+    </section>
+  </div>
+
+  <div id="research-modal" class="modal hidden feature-modal" role="dialog" aria-modal="true" aria-labelledby="research-title">
+    <section class="modal-card feature-card">
+      <div class="feature-heading">
+        <div><h3 id="research-title">Технологии государства</h3><p class="feature-subtitle">Можно вести только одно исследование одновременно. Эффекты действуют постоянно после завершения.</p></div>
+        <button id="research-close-btn" class="overlay-close feature-close" type="button" aria-label="Закрыть исследования">×</button>
+      </div>
+      <div class="research-tree">
+        <div class="research-tree-root"><span class="research-tree-root-icon">✦</span><strong>Развитие государства</strong><small>Выберите направление реформ</small></div>
+        <div class="research-branches">
+        <article class="research-branch military-branch">
+          <div class="research-branch-icon" aria-hidden="true">⚔</div>
+          <div class="research-branch-copy"><h4>Военная ветка</h4><p>Реформа Армии</p><p class="research-effect">+1% к атаке всех собственных войск.</p><p id="research-military-status" class="research-status">Не исследовано</p></div>
+          <button id="research-military-btn" class="btn btn-primary" type="button">Исследовать</button>
+        </article>
+        <article class="research-branch economy-branch">
+          <div class="research-branch-icon" aria-hidden="true">⚙</div>
+          <div class="research-branch-copy"><h4>Экономическая ветка</h4><p>Реформа Экономики</p><p class="research-effect">+1% к общему доходу золота и стали за ход.</p><p id="research-economy-status" class="research-status">Не исследовано</p></div>
+          <button id="research-economy-btn" class="btn btn-primary" type="button">Исследовать</button>
+        </article>
+        </div>
+      </div>
+      <div id="research-summary" class="research-summary"></div>
+      <p class="feature-footnote">Базовая стоимость: военная реформа — 250 золота; экономическая реформа — 300 золота. Первое исследование каждого направления длится 30 игровых дней (ходов). Инфляция влияет на стоимость начала исследования.</p>
+    </section>
+  </div>
+
+  <div id="movement-management-modal" class="modal hidden feature-modal" role="dialog" aria-modal="true" aria-labelledby="movement-management-title">
+    <section class="modal-card feature-card movement-management-card">
+      <div class="feature-heading">
+        <div><h3 id="movement-management-title">Армии в пути и приказы</h3><p class="feature-subtitle">Просматривайте маршруты, меняйте цель марша или отзывайте свои отряды.</p></div>
+        <button id="movement-management-close-btn" class="overlay-close feature-close" type="button" aria-label="Закрыть управление маршами">×</button>
+      </div>
+      <h4>Армии в пути</h4>
+      <div id="movement-management-list" class="movement-management-list"></div>
+      <h4>Незавершённые приказы производства</h4>
+      <div id="movement-management-orders-list" class="movement-management-list"></div>
+      <p id="movement-redirect-hint" class="feature-footnote hidden">Выберите провинцию на карте, чтобы направить выбранную армию к новой цели. Нажмите Esc, чтобы отменить.</p>
+    </section>
+  </div>
+
+  <div id="move-modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3>Перемещение войск</h3>
+      <p id="move-modal-text"></p>
+      <div class="modal-grid">
+        <label for="move-soldiers">Солдаты</label>
+        <input id="move-soldiers" type="number" min="0" step="1" value="0">
+        <label for="move-tanks">Танки</label>
+        <input id="move-tanks" type="number" min="0" step="1" value="0">
+      </div>
+      <p id="move-preview" class="hint"></p>
+      <section id="move-battle-forecast" class="forecast-section hidden" aria-live="polite">
+        <h4>Прогноз боя</h4>
+        <div id="move-battle-forecast-content" class="forecast-grid"></div>
+        <p id="move-battle-forecast-note" class="forecast-note"></p>
+      </section>
+      <div class="modal-actions">
+        <button id="move-confirm" class="btn btn-primary" type="button">Отправить</button>
+        <button id="move-cancel" class="btn btn-ghost" type="button">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="game-over" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="modal-card">
+      <h3 id="game-over-title"></h3>
+      <p id="game-over-text"></p>
+      <button id="restart-btn" class="btn btn-primary" type="button">Новая кампания</button>
+    </div>
+  </div>
+
+  <script src="game.js"></script>
+</body>
+</html>
